@@ -21,12 +21,12 @@ export interface NavItem {
  * Rule: No module imports from another module.
  */
 const MODULE_NAV: Record<string, NavItem[]> = {
-  _always:  [{ href: '/admin',               label: 'Dashboard',    Icon: LayoutDashboard, exact: true }],
-  crm:      [{ href: '/admin/contacts',       label: 'Contacts',     Icon: Users }],
-  calendar: [{ href: '/admin/appointments',  label: 'Appointments', Icon: CalendarDays }],
-  inbox:    [{ href: '/admin/inquiries',     label: 'Inquiries',    Icon: Inbox },
-             { href: '/admin/messages',      label: 'Messages',     Icon: MessageSquare }],
-  entities: [{ href: '/admin/blog',          label: 'Blog',         Icon: BookOpen }],
+  _always:  [{ href: '/',               label: 'Dashboard',    Icon: LayoutDashboard, exact: true }],
+  crm:      [{ href: '/contacts',       label: 'Contacts',     Icon: Users }],
+  calendar: [{ href: '/appointments',  label: 'Appointments', Icon: CalendarDays }],
+  inbox:    [{ href: '/inquiries',     label: 'Inquiries',    Icon: Inbox },
+             { href: '/messages',      label: 'Messages',     Icon: MessageSquare }],
+  entities: [{ href: '/blog',          label: 'Blog',         Icon: BookOpen }],
 };
 
 export function getNavForModules(activeModules: string[]): NavItem[] {

@@ -103,7 +103,7 @@ export function AdminInquiriesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/inquiries?page=${p}&limit=${LIMIT}`);
+      const res = await fetch(`/api/inquiries?page=${p}&limit=${LIMIT}`);
       const data = await res.json() as { submissions?: Submission[]; total?: number; error?: string; forms?: Array<{ id: string; name: string }> };
       if (!res.ok) throw new Error(data.error || 'Failed to fetch inquiries');
       setSubmissions(data.submissions || []);

@@ -27,7 +27,7 @@ export function AdminMessagesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/messages?page=${p}&limit=${LIMIT}`);
+      const res = await fetch(`/api/messages?page=${p}&limit=${LIMIT}`);
       const data = await res.json() as { conversations?: Conversation[]; total?: number; error?: string };
       if (!res.ok) throw new Error(data.error || 'Failed to fetch messages');
       setConversations(data.conversations || []);

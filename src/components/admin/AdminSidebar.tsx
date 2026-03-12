@@ -30,7 +30,7 @@ interface AdminSidebarProps {
 
 async function handleSignOut() {
   await fetch('/api/auth/signout', { method: 'POST' });
-  window.location.href = '/admin/login';
+  window.location.href = '/login';
 }
 
 export function AdminSidebar({ session }: AdminSidebarProps) {
@@ -42,7 +42,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href;
-    return pathname?.startsWith(href) && href !== '/admin';
+    return pathname?.startsWith(href) && href !== '/';
   };
 
   const SidebarContent = () => (
@@ -118,7 +118,7 @@ export function AdminSidebar({ session }: AdminSidebarProps) {
         'border-t border-border/50 px-3 py-4 space-y-1',
       )}>
         <Link
-          href="/admin/settings"
+          href="/settings"
           className={cn(
             'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all',
             collapsed && 'justify-center px-2'

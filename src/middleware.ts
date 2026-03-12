@@ -1,6 +1,6 @@
 /**
- * Next.js middleware — protects /admin routes.
- * Redirects unauthenticated users to /admin/login.
+ * Next.js middleware — protects all routes except /login and /api/auth.
+ * Redirects unauthenticated users to /login.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken } from '@/lib/auth';
@@ -39,26 +39,21 @@ async function isUserActiveInDB(email: string): Promise<boolean> {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Only guard /admin routes
-  if (!pathname.startsWith('/admin')) {
-    return NextResponse.next();
-  }
-
-  // Login page is always accessible
-  if (pathname === '/admin/login') {
+  // Always allow login page and auth callbacks
+  if (pathname.startsWith('/login') || pathname.startsWith('/api/auth')) {
     return NextResponse.next();
   }
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
 
   if (!token) {
-    return NextResponse.redirect(new URL('/admin/login', request.url));
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   const session = await verifySessionToken(token);
 
   if (!session) {
-    const response = NextResponse.redirect(new URL('/admin/login', request.url));
+    const response = NextResponse.redirect(new URL('/login', request.url));
     response.cookies.delete(SESSION_COOKIE);
     return response;
   }
@@ -66,7 +61,7 @@ export async function middleware(request: NextRequest) {
   // Revocation check — user may have been deactivated since the JWT was issued
   const activeInDB = await isUserActiveInDB(session.email);
   if (!activeInDB) {
-    const response = NextResponse.redirect(new URL('/admin/login', request.url));
+    const response = NextResponse.redirect(new URL('/login', request.url));
     response.cookies.set(SESSION_COOKIE, '', { maxAge: 0, path: '/', httpOnly: true, sameSite: 'lax' });
     return response;
   }
@@ -81,5 +76,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

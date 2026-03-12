@@ -32,7 +32,7 @@ export function AdminContactsPage() {
     const params = new URLSearchParams({ page: String(p), limit: String(LIMIT) });
     if (q) params.set('q', q);
     try {
-      const res = await fetch(`/api/admin/contacts?${params}`);
+      const res = await fetch(`/api/contacts?${params}`);
       const data = await res.json() as { contacts?: Contact[]; total?: number; error?: string };
       if (!res.ok) throw new Error(data.error || 'Failed to fetch contacts');
       setContacts(data.contacts || []);

@@ -71,7 +71,7 @@ export function AdminBlogPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/blog?page=${p}&limit=${LIMIT}`);
+      const res = await fetch(`/api/blog?page=${p}&limit=${LIMIT}`);
       const data = await res.json() as { posts?: BlogPost[]; total?: number; error?: string };
       if (!res.ok) throw new Error(data.error || 'Failed to fetch posts');
       setPosts(data.posts || []);
@@ -94,7 +94,7 @@ export function AdminBlogPage() {
 
   const openEdit = async (post: BlogPost) => {
     setEditId(post.id);
-    const res = await fetch(`/api/admin/blog/${post.id}`);
+    const res = await fetch(`/api/blog/${post.id}`);
     const data = await res.json() as { post?: Record<string, unknown> };
     const p = data.post || {};
     setForm({
@@ -128,7 +128,7 @@ export function AdminBlogPage() {
     };
 
     try {
-      const url = editId ? `/api/admin/blog/${editId}` : '/api/admin/blog';
+      const url = editId ? `/api/blog/${editId}` : '/api/blog';
       const method = editId ? 'PATCH' : 'POST';
       const res = await fetch(url, {
         method,
@@ -149,7 +149,7 @@ export function AdminBlogPage() {
 
   const handleDelete = async (id: number) => {
     try {
-      const res = await fetch(`/api/admin/blog/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/blog/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Delete failed');
       setDeleteConfirm(null);
       fetchData(page);
@@ -159,7 +159,7 @@ export function AdminBlogPage() {
   };
 
   const togglePublish = async (post: BlogPost) => {
-    const res = await fetch(`/api/admin/blog/${post.id}`, {
+    const res = await fetch(`/api/blog/${post.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ published: !post.published }),

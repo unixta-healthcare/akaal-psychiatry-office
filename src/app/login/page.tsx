@@ -21,7 +21,7 @@ export default async function LoginPage({
 }) {
   // Already logged in → go to dashboard
   const session = await getSession();
-  if (session) redirect('/admin');
+  if (session) redirect('/');
 
   const { error } = await searchParams;
 

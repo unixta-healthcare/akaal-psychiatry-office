@@ -32,7 +32,7 @@ function ProfileTab() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/profile')
+    fetch('/api/profile')
       .then(r => r.json())
       .then(d => { setProfile(d); setDraftName(d.name ?? ''); });
   }, []);
@@ -40,7 +40,7 @@ function ProfileTab() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true); setError(null);
-    const res = await fetch('/api/admin/profile', {
+    const res = await fetch('/api/profile', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: draftName }),
@@ -162,7 +162,7 @@ function PracticeTab() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    fetch('/api/admin/settings/practice')
+    fetch('/api/settings/practice')
       .then(r => r.json())
       .then(d => setForm(f => ({ ...f, ...d })))
       .finally(() => setLoading(false));
@@ -171,7 +171,7 @@ function PracticeTab() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await fetch('/api/admin/settings/practice', {
+    await fetch('/api/settings/practice', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
@@ -254,13 +254,13 @@ function NotificationsTab() {
   const [newApptEmail, setNewApptEmail] = useState('');
 
   useEffect(() => {
-    fetch('/api/admin/settings/notifications')
+    fetch('/api/settings/notifications')
       .then(r => r.json()).then(d => setSettings(s => ({ ...s, ...d }))).finally(() => setLoading(false));
   }, []);
 
   async function save(updated: typeof settings) {
     setSaving(true);
-    await fetch('/api/admin/settings/notifications', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) });
+    await fetch('/api/settings/notifications', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updated) });
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000);
   }
 
@@ -344,8 +344,8 @@ function IntegrationsTab() {
   const [appt, setAppt] = useState<'checking' | 'connected' | 'not_configured'>('checking');
 
   useEffect(() => {
-    fetch('/api/admin/contacts?limit=1').then(r => setCrm(r.ok ? 'connected' : 'error')).catch(() => setCrm('error'));
-    fetch('/api/admin/appointments?limit=1').then(r => setAppt(r.ok ? 'connected' : 'not_configured')).catch(() => setAppt('not_configured'));
+    fetch('/api/contacts?limit=1').then(r => setCrm(r.ok ? 'connected' : 'error')).catch(() => setCrm('error'));
+    fetch('/api/appointments?limit=1').then(r => setAppt(r.ok ? 'connected' : 'not_configured')).catch(() => setAppt('not_configured'));
   }, []);
 
   const items = [
@@ -412,7 +412,7 @@ function StaffTab() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch('/api/admin/users');
+    const res = await fetch('/api/users');
     if (res.ok) setUsers(await res.json());
     setLoading(false);
   }, []);
@@ -421,7 +421,7 @@ function StaffTab() {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault(); setSubmitting(true); setError(null);
-    const res = await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: newEmail, name: newName, role: newRole }) });
+    const res = await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: newEmail, name: newName, role: newRole }) });
     const data = await res.json();
     if (!res.ok) { setError(data.error); setSubmitting(false); return; }
     setUsers(p => [...p, data]); setNewName(''); setNewEmail(''); setNewRole('staff'); setShowAdd(false);
@@ -430,18 +430,18 @@ function StaffTab() {
   }
 
   async function toggleActive(user: StaffUser) {
-    const res = await fetch(`/api/admin/users/${user.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_active: !user.is_active }) });
+    const res = await fetch(`/api/users/${user.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_active: !user.is_active }) });
     if (res.ok) { const u = await res.json(); setUsers(p => p.map(x => x.id === user.id ? { ...x, is_active: u.is_active } : x)); }
   }
 
   async function changeRole(user: StaffUser, role: string) {
-    const res = await fetch(`/api/admin/users/${user.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) });
+    const res = await fetch(`/api/users/${user.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) });
     if (res.ok) { const u = await res.json(); setUsers(p => p.map(x => x.id === user.id ? { ...x, role: u.role } : x)); }
   }
 
   async function removeUser(user: StaffUser) {
     if (!confirm(`Remove ${user.name}? They will lose access immediately.`)) return;
-    const res = await fetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/users/${user.id}`, { method: 'DELETE' });
     if (res.ok) { setUsers(p => p.filter(u => u.id !== user.id)); setSuccess(`${user.name} removed.`); setTimeout(() => setSuccess(null), 4000); }
     else { const d = await res.json(); setError(d.error); setTimeout(() => setError(null), 5000); }
   }

@@ -53,7 +53,7 @@ export function AdminAppointmentsPage() {
     if (selectedCalendar) params.set('calendarId', selectedCalendar);
 
     try {
-      const res = await fetch(`/api/admin/appointments?${params}`);
+      const res = await fetch(`/api/appointments?${params}`);
       const data = await res.json() as { events?: Appointment[]; calendars?: CalendarItem[]; error?: string };
       if (!res.ok) throw new Error(data.error || 'Failed to fetch appointments');
       setEvents(data.events || []);
