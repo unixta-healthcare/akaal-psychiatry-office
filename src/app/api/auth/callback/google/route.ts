@@ -2,12 +2,15 @@
  * GET /api/auth/callback/google
  * Handles Google OAuth callback:
  *   1. Verify state param (CSRF)
- *   2. Exchange code for access token
+ *   2. Exchange code for access token (using same-origin redirect_uri)
  *   3. Get user info from Google
  *   4. Check user exists in akaal_psychiatry_admin_users (is_active = true)
  *   5. Update last_login_at + google_id
  *   6. Create JWT session cookie
  *   7. Redirect to /admin
+ *
+ * The redirect_uri is derived from the incoming request origin so that
+ * both the Vercel domain and any custom domain work interchangeably.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import {
@@ -17,9 +20,12 @@ import {
 } from '@/lib/auth';
 import { getSupabase, TABLES } from '@/lib/supabase';
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
 export async function GET(request: NextRequest) {
+  // Derive both the site URL and the redirect_uri from the incoming request.
+  // This makes any registered domain (Vercel or custom) work identically.
+  const origin = new URL(request.url).origin;
+  const redirectUri = `${origin}/api/auth/callback/google`;
+
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const state = searchParams.get('state');
@@ -27,28 +33,28 @@ export async function GET(request: NextRequest) {
 
   // Google denied access
   if (error) {
-    return NextResponse.redirect(`${SITE_URL}/admin/login?error=denied`);
+    return NextResponse.redirect(`${origin}/admin/login?error=denied`);
   }
 
   if (!code) {
-    return NextResponse.redirect(`${SITE_URL}/admin/login?error=no_code`);
+    return NextResponse.redirect(`${origin}/admin/login?error=no_code`);
   }
 
   // Verify CSRF state
   const savedState = request.cookies.get('google_oauth_state')?.value;
   if (!savedState || savedState !== state) {
-    return NextResponse.redirect(`${SITE_URL}/admin/login?error=invalid_state`);
+    return NextResponse.redirect(`${origin}/admin/login?error=invalid_state`);
   }
 
   try {
-    // Exchange code for user info
-    const googleUser = await exchangeGoogleCode(code);
+    // Exchange code for user info — pass the same redirect_uri used during initiation
+    const googleUser = await exchangeGoogleCode(code, redirectUri);
     if (!googleUser) {
-      return NextResponse.redirect(`${SITE_URL}/admin/login?error=google_failed`);
+      return NextResponse.redirect(`${origin}/admin/login?error=google_failed`);
     }
 
     if (!googleUser.email_verified) {
-      return NextResponse.redirect(`${SITE_URL}/admin/login?error=unverified_email`);
+      return NextResponse.redirect(`${origin}/admin/login?error=unverified_email`);
     }
 
     // Check allowlist: user must exist in admin_users table AND be active
@@ -61,11 +67,11 @@ export async function GET(request: NextRequest) {
 
     if (dbError || !adminUser) {
       console.warn(`[auth/callback] Unauthorized login attempt: ${googleUser.email}`);
-      return NextResponse.redirect(`${SITE_URL}/admin/login?error=unauthorized`);
+      return NextResponse.redirect(`${origin}/admin/login?error=unauthorized`);
     }
 
     if (!adminUser.is_active) {
-      return NextResponse.redirect(`${SITE_URL}/admin/login?error=account_disabled`);
+      return NextResponse.redirect(`${origin}/admin/login?error=account_disabled`);
     }
 
     // Update last_login_at and google_id
@@ -90,10 +96,9 @@ export async function GET(request: NextRequest) {
 
     const token = await createSessionToken(session);
 
-    // Redirect to admin dashboard with session cookie
-    const response = NextResponse.redirect(`${SITE_URL}/admin`);
+    // Redirect to admin dashboard on the same domain the user came from
+    const response = NextResponse.redirect(`${origin}/admin`);
 
-    // Set session cookie using Next.js cookies API (reliable on redirect responses)
     response.cookies.set('akaal_admin_session', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -108,6 +113,6 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (err) {
     console.error('[auth/callback] Unexpected error:', err);
-    return NextResponse.redirect(`${SITE_URL}/admin/login?error=server_error`);
+    return NextResponse.redirect(`${origin}/admin/login?error=server_error`);
   }
 }
