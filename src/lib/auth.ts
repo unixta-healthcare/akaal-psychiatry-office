@@ -98,6 +98,9 @@ export function buildClearCookieHeader(): string {
 }
 
 // ─── Google OAuth ─────────────────────────────────────────────────────────────
+// redirectUri is optional — when omitted, falls back to GOOGLE_REDIRECT_URI env var.
+// Passing it explicitly (derived from request.url) lets any registered domain work
+// without changing env vars.
 
 const GOOGLE_AUTH_BASE = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
@@ -111,17 +114,16 @@ export interface GoogleUserInfo {
   email_verified: boolean;
 }
 
-export function buildGoogleAuthUrl(state: string, redirectUri?: string): string {
+export function buildGoogleAuthUrl(state: string, callbackUri?: string): string {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const resolvedRedirectUri = redirectUri ?? process.env.GOOGLE_REDIRECT_URI;
-  if (!clientId || !resolvedRedirectUri) {
+  const resolvedUri = callbackUri ?? process.env.GOOGLE_REDIRECT_URI;
+  if (!clientId || !resolvedUri) {
     throw new Error('GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI are required');
   }
-  const redirectUri = resolvedRedirectUri;
 
   const params = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: redirectUri,
+    redirect_uri: resolvedUri,
     response_type: 'code',
     scope: 'openid email profile',
     state,
@@ -132,12 +134,12 @@ export function buildGoogleAuthUrl(state: string, redirectUri?: string): string 
   return `${GOOGLE_AUTH_BASE}?${params}`;
 }
 
-export async function exchangeGoogleCode(code: string): Promise<GoogleUserInfo | null> {
+export async function exchangeGoogleCode(code: string, callbackUri?: string): Promise<GoogleUserInfo | null> {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  const resolvedUri = callbackUri ?? process.env.GOOGLE_REDIRECT_URI;
 
-  if (!clientId || !clientSecret || !redirectUri) {
+  if (!clientId || !clientSecret || !resolvedUri) {
     throw new Error('Google OAuth credentials not configured');
   }
 
@@ -149,7 +151,7 @@ export async function exchangeGoogleCode(code: string): Promise<GoogleUserInfo |
       code,
       client_id: clientId,
       client_secret: clientSecret,
-      redirect_uri: redirectUri,
+      redirect_uri: resolvedUri,
       grant_type: 'authorization_code',
     }),
   });
