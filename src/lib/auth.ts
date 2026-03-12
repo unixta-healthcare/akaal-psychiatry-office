@@ -111,12 +111,13 @@ export interface GoogleUserInfo {
   email_verified: boolean;
 }
 
-export function buildGoogleAuthUrl(state: string): string {
+export function buildGoogleAuthUrl(state: string, redirectUri?: string): string {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
-  if (!clientId || !redirectUri) {
+  const resolvedRedirectUri = redirectUri ?? process.env.GOOGLE_REDIRECT_URI;
+  if (!clientId || !resolvedRedirectUri) {
     throw new Error('GOOGLE_CLIENT_ID and GOOGLE_REDIRECT_URI are required');
   }
+  const redirectUri = resolvedRedirectUri;
 
   const params = new URLSearchParams({
     client_id: clientId,
